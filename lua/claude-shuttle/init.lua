@@ -45,8 +45,24 @@ local function create_anchor(filepath, start_line, end_line)
   end
 end
 
+-- Find existing Claude pane
+local function find_claude_pane()
+  -- Get all panes with their command
+  local panes = vim.fn.system("tmux list-panes -a -F '#{pane_id}:#{pane_current_command}'")
+
+  -- Look for panes running claude
+  for line in panes:gmatch("[^\n]+") do
+    local pane_id, command = line:match("^([^:]+):(.+)$")
+    if command and command:match("claude") then
+      return pane_id
+    end
+  end
+
+  return nil
+end
+
 -- Send code block to Claude pane
-local function send_to_claude(start_line, end_line)
+local function send_to_claude(target_pane, start_line, end_line)
   if not is_in_tmux() then
     vim.notify("claude-shuttle: Not running inside tmux", vim.log.levels.ERROR)
     return
@@ -64,10 +80,6 @@ local function send_to_claude(start_line, end_line)
   -- Format the complete message
   local message = string.format("%s\n```%s\n%s\n```", anchor, lang, code_block)
 
-  -- Escape the message for tmux
-  -- We need to replace newlines and special characters
-  local escaped = message:gsub("'", "'\\''")
-
   -- Use tmux load-buffer and paste-buffer to send the text
   local tmux_cmd = string.format(
     "tmux load-buffer - <<'EOF'\n%s\nEOF",
@@ -75,9 +87,6 @@ local function send_to_claude(start_line, end_line)
   )
 
   vim.fn.system(tmux_cmd)
-
-  -- Get the target pane (the last pane, which should be the Claude pane)
-  local target_pane = vim.fn.system("tmux list-panes -F '#{pane_id}' | tail -1"):gsub("\n", "")
 
   -- Paste the buffer and send Enter
   vim.fn.system(string.format("tmux paste-buffer -t %s", target_pane))
@@ -93,16 +102,35 @@ function M.claudev(start_line, end_line)
     return
   end
 
-  -- Create vertical split with Claude
-  local cmd = string.format("tmux split-window -h '%s'", M.config.claude_cmd)
-  vim.fn.system(cmd)
+  -- Check if Claude pane already exists
+  local claude_pane = find_claude_pane()
 
-  -- If range is provided, send the code block
-  if start_line and end_line then
-    -- Wait a bit for the pane to be ready
-    vim.defer_fn(function()
-      send_to_claude(start_line, end_line)
-    end, 500)
+  if claude_pane then
+    -- Pane exists, switch to it
+    vim.fn.system(string.format("tmux select-pane -t %s", claude_pane))
+    vim.notify("Switched to existing Claude pane", vim.log.levels.INFO)
+
+    -- If range is provided, send the code block
+    if start_line and end_line then
+      vim.defer_fn(function()
+        send_to_claude(claude_pane, start_line, end_line)
+      end, 100)
+    end
+  else
+    -- Create vertical split with Claude
+    local cmd = string.format("tmux split-window -h '%s'", M.config.claude_cmd)
+    vim.fn.system(cmd)
+
+    -- Get the newly created pane
+    local new_pane = vim.fn.system("tmux list-panes -F '#{pane_id}' | tail -1"):gsub("\n", "")
+
+    -- If range is provided, send the code block
+    if start_line and end_line then
+      -- Wait a bit for the pane to be ready
+      vim.defer_fn(function()
+        send_to_claude(new_pane, start_line, end_line)
+      end, 500)
+    end
   end
 end
 
@@ -113,16 +141,35 @@ function M.claudeh(start_line, end_line)
     return
   end
 
-  -- Create horizontal split with Claude
-  local cmd = string.format("tmux split-window -v '%s'", M.config.claude_cmd)
-  vim.fn.system(cmd)
+  -- Check if Claude pane already exists
+  local claude_pane = find_claude_pane()
 
-  -- If range is provided, send the code block
-  if start_line and end_line then
-    -- Wait a bit for the pane to be ready
-    vim.defer_fn(function()
-      send_to_claude(start_line, end_line)
-    end, 500)
+  if claude_pane then
+    -- Pane exists, switch to it
+    vim.fn.system(string.format("tmux select-pane -t %s", claude_pane))
+    vim.notify("Switched to existing Claude pane", vim.log.levels.INFO)
+
+    -- If range is provided, send the code block
+    if start_line and end_line then
+      vim.defer_fn(function()
+        send_to_claude(claude_pane, start_line, end_line)
+      end, 100)
+    end
+  else
+    -- Create horizontal split with Claude
+    local cmd = string.format("tmux split-window -v '%s'", M.config.claude_cmd)
+    vim.fn.system(cmd)
+
+    -- Get the newly created pane
+    local new_pane = vim.fn.system("tmux list-panes -F '#{pane_id}' | tail -1"):gsub("\n", "")
+
+    -- If range is provided, send the code block
+    if start_line and end_line then
+      -- Wait a bit for the pane to be ready
+      vim.defer_fn(function()
+        send_to_claude(new_pane, start_line, end_line)
+      end, 500)
+    end
   end
 end
 
