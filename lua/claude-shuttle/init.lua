@@ -42,14 +42,19 @@ end
 
 -- Find existing Claude pane
 local function find_claude_pane()
-  -- Get all panes with their command
-  local panes = vim.fn.system("tmux list-panes -a -F '#{pane_id}:#{pane_current_command}'")
+  -- Get all panes with their PIDs
+  local panes = vim.fn.system("tmux list-panes -a -F '#{pane_id}:#{pane_pid}'")
 
-  -- Look for panes running claude
+  -- Check each pane's actual process
   for line in panes:gmatch("[^\n]+") do
-    local pane_id, command = line:match("^([^:]+):(.+)$")
-    if command and command:match("claude") then
-      return pane_id
+    local pane_id, pid = line:match("^([^:]+):(%d+)$")
+    if pane_id and pid then
+      -- Get the process tree for this pane and check if claude is running
+      local ps_output = vim.fn.system(string.format("ps -o command= -t $(tmux display-message -t %s -p '#{pane_tty}' 2>/dev/null) 2>/dev/null | grep -i claude | head -1", pane_id))
+
+      if ps_output and ps_output ~= "" and not ps_output:match("grep") then
+        return pane_id
+      end
     end
   end
 
