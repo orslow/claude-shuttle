@@ -2,6 +2,8 @@
 
 A Neovim plugin for sending code blocks to Claude CLI within tmux.
 
+> **⚠️ Important**: This plugin has only been tested with [nixvim](https://github.com/nix-community/nixvim). Compatibility with other Neovim distributions is not guaranteed.
+
 ## Overview
 
 claude-shuttle enables seamless code sharing between Neovim and Claude CLI running in separate tmux panes. Select code in Neovim, run `:Shuttle`, and the code appears in your Claude pane with file path and line number annotations.
