@@ -28,7 +28,7 @@ claude-shuttle enables seamless code sharing between Neovim and Claude CLI runni
 
 ```lua
 {
-  'yourusername/claude-shuttle',
+  'orslow/claude-shuttle',
   config = function()
     require('claude-shuttle').setup()
   end
@@ -39,7 +39,7 @@ claude-shuttle enables seamless code sharing between Neovim and Claude CLI runni
 
 ```lua
 use {
-  'yourusername/claude-shuttle',
+  'orslow/claude-shuttle',
   config = function()
     require('claude-shuttle').setup()
   end
@@ -49,7 +49,7 @@ use {
 ### Using [vim-plug](https://github.com/junegunn/vim-plug)
 
 ```vim
-Plug 'yourusername/claude-shuttle'
+Plug 'orslow/claude-shuttle'
 ```
 
 ## Usage
