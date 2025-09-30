@@ -5,35 +5,18 @@ if vim.g.loaded_claude_shuttle then
 end
 vim.g.loaded_claude_shuttle = true
 
--- Create user commands
-vim.api.nvim_create_user_command("Claudev", function(opts)
+-- Create Shuttle command
+vim.api.nvim_create_user_command("Shuttle", function(opts)
   local start_line = opts.line1
   local end_line = opts.line2
 
-  -- If no range specified, start_line and end_line will both be current line
-  -- We only want to send code if user explicitly selected a range
+  -- Only proceed if user selected a range
   if opts.range > 0 then
-    require("claude-shuttle").claudev(start_line, end_line)
+    require("claude-shuttle").shuttle(start_line, end_line)
   else
-    require("claude-shuttle").claudev()
+    require("claude-shuttle").shuttle()
   end
 end, {
   range = true,
-  desc = "Open Claude CLI in vertical tmux split"
-})
-
-vim.api.nvim_create_user_command("Claudeh", function(opts)
-  local start_line = opts.line1
-  local end_line = opts.line2
-
-  -- If no range specified, start_line and end_line will both be current line
-  -- We only want to send code if user explicitly selected a range
-  if opts.range > 0 then
-    require("claude-shuttle").claudeh(start_line, end_line)
-  else
-    require("claude-shuttle").claudeh()
-  end
-end, {
-  range = true,
-  desc = "Open Claude CLI in horizontal tmux split"
+  desc = "Send selected code block to existing Claude pane"
 })
