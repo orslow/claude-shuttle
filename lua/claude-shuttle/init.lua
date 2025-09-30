@@ -42,8 +42,8 @@ end
 
 -- Find existing Claude pane
 local function find_claude_pane()
-  -- Get all panes with their PIDs
-  local panes = vim.fn.system("tmux list-panes -a -F '#{pane_id}:#{pane_pid}'")
+  -- Get panes in current window only
+  local panes = vim.fn.system("tmux list-panes -F '#{pane_id}:#{pane_pid}'")
 
   -- Check each pane's actual process
   for line in panes:gmatch("[^\n]+") do
@@ -104,9 +104,9 @@ function M.shuttle(start_line, end_line)
 
   vim.fn.system(tmux_cmd)
 
-  -- Paste the buffer and send Enter
+  -- Paste the buffer and switch to Claude pane
   vim.fn.system(string.format("tmux paste-buffer -t %s", claude_pane))
-  vim.fn.system(string.format("tmux send-keys -t %s Enter", claude_pane))
+  vim.fn.system(string.format("tmux select-pane -t %s", claude_pane))
 
   vim.notify("Sent code block to Claude", vim.log.levels.INFO)
 end
