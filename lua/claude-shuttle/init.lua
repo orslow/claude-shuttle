@@ -50,9 +50,13 @@ local function find_claude_pane()
     local pane_id, pid = line:match("^([^:]+):(%d+)$")
     if pane_id and pid then
       -- Get the process tree for this pane and check if claude is running
-      local ps_output = vim.fn.system(string.format("ps -o command= -t $(tmux display-message -t %s -p '#{pane_tty}' 2>/dev/null) 2>/dev/null | grep -i claude | head -1", pane_id))
+      -- Exclude stopped processes (STAT starting with 'T') to skip backgrounded claude (ctrl+z)
+      local ps_output = vim.fn.system(string.format(
+        "ps -o stat=,command= -t $(tmux display-message -t %s -p '#{pane_tty}' 2>/dev/null) 2>/dev/null | awk '$1 !~ /^T/ && tolower($0) ~ /claude/ {print; exit}'",
+        pane_id
+      ))
 
-      if ps_output and ps_output ~= "" and not ps_output:match("grep") then
+      if ps_output and ps_output ~= "" then
         return pane_id
       end
     end
