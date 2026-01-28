@@ -97,8 +97,8 @@ function M.shuttle(start_line, end_line)
   local anchor = create_anchor(filepath, start_line, end_line)
   local code_block = table.concat(lines, "\n")
 
-  -- Format the complete message
-  local message = string.format("%s\n```%s\n%s\n```", anchor, lang, code_block)
+  -- Format the complete message (with trailing newline for cursor positioning)
+  local message = string.format("%s\n```%s\n%s\n```\n", anchor, lang, code_block)
 
   -- Use tmux load-buffer and paste-buffer to send the text
   local tmux_cmd = string.format(
@@ -108,8 +108,9 @@ function M.shuttle(start_line, end_line)
 
   vim.fn.system(tmux_cmd)
 
-  -- Paste the buffer and switch to Claude pane
+  -- Paste the buffer and move cursor to end of input
   vim.fn.system(string.format("tmux paste-buffer -t %s", claude_pane))
+  vim.fn.system(string.format("tmux send-keys -t %s C-e", claude_pane))
   vim.fn.system(string.format("tmux select-pane -t %s", claude_pane))
 
   vim.notify("Sent code block to Claude", vim.log.levels.INFO)
