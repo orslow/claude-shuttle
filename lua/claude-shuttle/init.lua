@@ -97,8 +97,8 @@ function M.shuttle(start_line, end_line)
   local anchor = create_anchor(filepath, start_line, end_line)
   local code_block = table.concat(lines, "\n")
 
-  -- Format the complete message (with trailing newline for cursor positioning)
-  local message = string.format("%s\n```%s\n%s\n```\n", anchor, lang, code_block)
+  -- Format the complete message
+  local message = string.format("%s\n```%s\n%s\n```", anchor, lang, code_block)
 
   -- Use tmux load-buffer and paste-buffer to send the text
   local tmux_cmd = string.format(
