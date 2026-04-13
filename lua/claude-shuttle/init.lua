@@ -100,16 +100,14 @@ function M.shuttle(start_line, end_line)
   -- Format the complete message
   local message = string.format("%s\n```%s\n%s\n```", anchor, lang, code_block)
 
-  -- Use tmux load-buffer and paste-buffer to send the text
-  local tmux_cmd = string.format(
-    "tmux load-buffer - <<'EOF'\n%s\nEOF",
-    message
+  -- Use tmux named buffer with direct stdin (no shell/heredoc parsing)
+  vim.fn.system(
+    {"tmux", "load-buffer", "-b", "claude-shuttle", "-"},
+    message .. "\n"
   )
 
-  vim.fn.system(tmux_cmd)
-
-  -- Paste the buffer and move cursor to end of input
-  vim.fn.system(string.format("tmux paste-buffer -t %s", claude_pane))
+  -- Paste the named buffer and delete it after use
+  vim.fn.system(string.format("tmux paste-buffer -b claude-shuttle -d -t %s", claude_pane))
   vim.fn.system(string.format("tmux send-keys -t %s C-e", claude_pane))
   vim.fn.system(string.format("tmux select-pane -t %s", claude_pane))
 
