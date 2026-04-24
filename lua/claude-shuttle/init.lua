@@ -106,8 +106,11 @@ function M.shuttle(start_line, end_line)
     message .. "\n"
   )
 
-  -- Paste the named buffer and delete it after use
-  vim.fn.system(string.format("tmux paste-buffer -b claude-shuttle -d -t %s", claude_pane))
+  -- Paste the named buffer and delete it after use.
+  -- -p: wrap with bracketed paste escape codes so Claude CLI (Ink-based TUI)
+  --     treats newlines as literal newlines instead of Enter/submit signals.
+  -- -r: keep LF as LF (skip default LF->CR conversion) inside the paste brackets.
+  vim.fn.system(string.format("tmux paste-buffer -b claude-shuttle -d -p -r -t %s", claude_pane))
   vim.fn.system(string.format("tmux send-keys -t %s C-e", claude_pane))
   vim.fn.system(string.format("tmux select-pane -t %s", claude_pane))
 
