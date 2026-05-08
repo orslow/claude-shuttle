@@ -97,20 +97,26 @@ function M.shuttle(start_line, end_line)
   local anchor = create_anchor(filepath, start_line, end_line)
   local code_block = table.concat(lines, "\n")
 
-  -- Format the complete message
-  local message = string.format("%s\n```%s\n%s\n```", anchor, lang, code_block)
+  -- Wrap content in bracketed paste escape codes (CSI 200~ ... CSI 201~).
+  -- We embed these directly because `tmux paste-buffer -p` only inserts them
+  -- when the receiving app has requested bracketed paste mode (DECSET 2004);
+  -- Claude CLI's Ink TUI doesn't reliably toggle that, so without these
+  -- wrappers Claude treats raw LFs as control chars and silently drops them.
+  local BP_START = "\27[200~"
+  local BP_END = "\27[201~"
+  local message = string.format("%s%s\n```%s\n%s\n```\n%s",
+    BP_START, anchor, lang, code_block, BP_END)
 
   -- Use tmux named buffer with direct stdin (no shell/heredoc parsing)
   vim.fn.system(
     {"tmux", "load-buffer", "-b", "claude-shuttle", "-"},
-    message .. "\n"
+    message
   )
 
   -- Paste the named buffer and delete it after use.
-  -- -p: wrap with bracketed paste escape codes so Claude CLI (Ink-based TUI)
-  --     treats newlines as literal newlines instead of Enter/submit signals.
-  -- -r: keep LF as LF (skip default LF->CR conversion) inside the paste brackets.
-  vim.fn.system(string.format("tmux paste-buffer -b claude-shuttle -d -p -r -t %s", claude_pane))
+  -- -r: keep LF as LF (skip default LF->CR conversion). Bracket codes are
+  --     embedded in the buffer content above, so we don't need -p.
+  vim.fn.system(string.format("tmux paste-buffer -b claude-shuttle -d -r -t %s", claude_pane))
   vim.fn.system(string.format("tmux send-keys -t %s C-e", claude_pane))
   vim.fn.system(string.format("tmux select-pane -t %s", claude_pane))
 
